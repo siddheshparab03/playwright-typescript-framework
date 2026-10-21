@@ -23,13 +23,17 @@ cp .env.example .env             # then put your login details in .env
 | `npm test` | Run all tests (headless) |
 | `npm run test:headed` | Run tests with the browser visible |
 | `npm run test:smoke` | Run only tests tagged `@smoke` |
+| `npm run test:regression` | Run only tests tagged `@regression` |
+| `npm run typecheck` | Check TypeScript for errors without running tests |
 | `npm run test:ui` | Open Playwright UI mode |
 | `npm run report` | Open the last HTML report |
 
 ## Project structure
 
 ```
-tests/                 Test files (*.spec.ts)
+tests/                 Test files (*.spec.ts): what to check
+pages/                 Page Objects: locators and actions for each page
+test-data/             JSON test data for data-driven tests
 playwright.config.ts   Playwright settings (browser, base URL, reports)
 .env.example           Template for environment variables
 ```
