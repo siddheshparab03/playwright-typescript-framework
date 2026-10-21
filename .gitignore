@@ -1,0 +1,17 @@
+# Installed packages (recreated with `npm install`)
+node_modules/
+
+# Secrets - never commit real credentials
+.env
+
+# Playwright output
+test-results/
+playwright-report/
+blob-report/
+playwright/.cache/
+.playwright-mcp/
+
+# OS / editor files
+.DS_Store
+Thumbs.db
+.vscode/
