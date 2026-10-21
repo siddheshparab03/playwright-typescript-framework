@@ -6,15 +6,20 @@ test.describe('Login', () => {
     await page.goto('/client/#/auth/login');
 
     // Step 2: enter email and password
-    await page.locator('#userEmail').fill(process.env.USER_EMAIL!);
+    // Built-in locator: getByPlaceholder - finds an input by its grey hint text
+    await page.getByPlaceholder('email@example.com').fill(process.env.USER_EMAIL!);
+    // CSS locator: '#' means "element with this id"
     await page.locator('#userPassword').fill(process.env.USER_PASSWORD!);
 
     // Step 3: click Login
-    await page.locator('#login').click();
+    // Built-in locator: getByRole - finds an element by its role (button) and visible name
+    await page.getByRole('button', { name: 'Login' }).click();
 
     // Expected: success toast is shown and the dashboard opens
-    await expect(page.locator('#toast-container')).toContainText('Login Successfully');
+    // Built-in locator: getByText - finds an element by the text it shows
+    await expect(page.getByText('Login Successfully')).toBeVisible();
     await expect(page).toHaveURL(/dashboard\/dash/);
-    await expect(page.getByRole('button', { name: 'Sign Out' })).toBeVisible();
+    // XPath locator: path-style query; contains(., 'text') matches the button's full text
+    await expect(page.locator("xpath=//button[contains(., 'Sign Out')]")).toBeVisible();
   });
 });
