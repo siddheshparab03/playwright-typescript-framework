@@ -20,10 +20,11 @@ cp .env.example .env             # then put your login details in .env
 
 | Command | What it does |
 | --- | --- |
-| `npm test` | Run all tests (headless) |
+| `npm test` | Run all tests (headless); cart tests run last |
 | `npm run test:headed` | Run tests with the browser visible |
-| `npm run test:smoke` | Run only tests tagged `@smoke` |
-| `npm run test:regression` | Run only tests tagged `@regression` |
+| `npm run test:smoke` | Run only tests tagged `@smoke`, one at a time |
+| `npm run test:regression` | Run only tests tagged `@regression`, one at a time |
+| `npx playwright test tests/cart.spec.ts --no-deps` | Run only the cart tests |
 | `npm run typecheck` | Check TypeScript for errors without running tests |
 | `npm run test:ui` | Open Playwright UI mode |
 | `npm run report` | Open the last HTML report |
@@ -37,3 +38,10 @@ test-data/             JSON test data for data-driven tests
 playwright.config.ts   Playwright settings (browser, base URL, reports)
 .env.example           Template for environment variables
 ```
+
+## Known constraint: one shared cart
+
+All tests use one account, and the site empties that account's cart whenever it logs in.
+So the cart tests run in a separate project (`chromium-cart`) that starts after every other
+test has finished, and the tag-based scripts run one test at a time. Logging in to the site
+yourself while the cart tests run can also make them fail.
