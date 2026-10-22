@@ -36,19 +36,9 @@ export default defineConfig({
     trace: 'retain-on-failure',
   },
 
-  // The site empties a user's cart whenever that user logs in again. Cart tests would lose
-  // their cart if other tests logged in at the same moment, so they run in their own project
-  // that starts only after the first project has finished.
   projects: [
     {
       name: 'chromium',
-      testIgnore: /cart\.spec\.ts/,
-      use: { ...devices['Desktop Chrome'] },
-    },
-    {
-      name: 'chromium-cart',
-      testMatch: /cart\.spec\.ts/,
-      dependencies: ['chromium'],
       use: { ...devices['Desktop Chrome'] },
     },
   ],
