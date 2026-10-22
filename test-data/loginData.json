@@ -1,0 +1,45 @@
+{
+  "fieldValidation": [
+    {
+      "id": "TC_LOGIN_03",
+      "scenario": "both fields empty",
+      "email": "",
+      "password": "",
+      "expectedMessages": ["*Email is required", "*Password is required"]
+    },
+    {
+      "id": "TC_LOGIN_04",
+      "scenario": "invalid email format",
+      "email": "abc@",
+      "password": "Test@123",
+      "expectedMessages": ["*Enter Valid Email"]
+    },
+    {
+      "id": "TC_LOGIN_08",
+      "scenario": "empty password",
+      "email": "someone@example.com",
+      "password": "",
+      "expectedMessages": ["*Password is required"]
+    }
+  ],
+  "rejectedLogins": [
+    {
+      "id": "TC_LOGIN_02",
+      "scenario": "wrong password",
+      "useRegisteredEmail": true,
+      "email": "",
+      "password": "Wrong@999"
+    },
+    {
+      "id": "TC_LOGIN_07",
+      "scenario": "unregistered email",
+      "useRegisteredEmail": false,
+      "email": "not.registered.user.9876@example.com",
+      "password": "Test@123"
+    }
+  ],
+  "messages": {
+    "loginSuccess": "Login Successfully",
+    "loginFailed": "Incorrect email or password."
+  }
+}
