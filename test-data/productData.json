@@ -1,0 +1,35 @@
+{
+  "search": [
+    {
+      "id": "TC_PROD_02",
+      "scenario": "full product name in stored case",
+      "searchText": "ZARA COAT 3",
+      "expectedProduct": "ZARA COAT 3"
+    },
+    {
+      "id": "TC_PROD_06",
+      "scenario": "start of product name",
+      "searchText": "iphone",
+      "expectedProduct": "iphone 13 pro"
+    }
+  ],
+  "knownBugs": {
+    "caseInsensitiveSearch": {
+      "id": "TC_PROD_05",
+      "searchText": "zara",
+      "expectedProduct": "ZARA COAT 3"
+    }
+  },
+  "categoryFilter": {
+    "id": "TC_PROD_03",
+    "category": "electronics"
+  },
+  "productToView": "ZARA COAT 3",
+  "cart": {
+    "singleProduct": "ZARA COAT 3",
+    "multipleProducts": ["ZARA COAT 3", "iphone 13 pro"]
+  },
+  "messages": {
+    "addedToCart": "Product Added To Cart"
+  }
+}
