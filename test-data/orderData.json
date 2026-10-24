@@ -1,0 +1,30 @@
+{
+  "product": "ZARA COAT 3",
+  "country": {
+    "searchText": "ind",
+    "name": "India"
+  },
+  "card": {
+    "cvv": "123",
+    "nameOnCard": "Test Automation"
+  },
+  "coupons": [
+    {
+      "id": "TC_ORDER_04",
+      "scenario": "invalid coupon",
+      "code": "WRONGCODE",
+      "expectedMessage": "* Invalid Coupon"
+    },
+    {
+      "id": "TC_ORDER_05",
+      "scenario": "valid coupon",
+      "code": "rahulshettyacademy",
+      "expectedMessage": "* Coupon Applied"
+    }
+  ],
+  "messages": {
+    "missingShipping": "Please Enter Full Shipping Information",
+    "orderPlaced": "Order Placed Successfully",
+    "orderDeleted": "Orders Deleted Successfully"
+  }
+}

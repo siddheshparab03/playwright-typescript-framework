@@ -1,4 +1,10 @@
-import { type Page, type Locator } from '@playwright/test';
+import { type Page, type Locator, type Response, expect } from '@playwright/test';
+
+/** The JSON the page sends when it asks the server for products (search text and filters). */
+type ProductsRequest = {
+  productName?: string;
+  productCategory?: string[];
+};
 
 /**
  * Page Object for the Dashboard (Home) page (/client/#/dashboard/dash):
@@ -59,22 +65,40 @@ export class DashboardPage {
   }
 
   /**
-   * Starts listening for the product list request. Call it BEFORE the action that triggers
-   * the request, then await it AFTER, so the page has the new results before we check them.
+   * Starts listening for the product list response to OUR request. Call it BEFORE the action that
+   * triggers the request, then await it AFTER, so the page has the new results before we check them.
+   *
+   * The dashboard also loads the product list by itself (twice) when it opens. Checking the request
+   * body makes sure we get the answer to our search or filter, not one of those page-load requests.
    */
-  waitForProductsResponse() {
-    return this.page.waitForResponse((response) => response.url().includes('get-all-products'));
+  waitForProductsResponse(isOurRequest: (requestBody: ProductsRequest) => boolean) {
+    return this.page.waitForResponse(
+      (response) =>
+        response.url().includes('get-all-products') &&
+        isOurRequest(response.request().postDataJSON() ?? {}),
+    );
+  }
+
+  /**
+   * After the server answers, the page still needs a moment to redraw the list; until then the OLD
+   * cards are on screen. Waiting until the number of cards matches the answer proves the redraw is done.
+   */
+  async waitForProductListToMatch(response: Response) {
+    const body = await response.json();
+    await expect(this.productCards).toHaveCount(body.data?.length ?? 0);
   }
 
   async searchProduct(searchText: string) {
-    const responsePromise = this.waitForProductsResponse();
+    const responsePromise = this.waitForProductsResponse((body) => body.productName === searchText);
     await this.searchBox.fill(searchText);
     await this.searchBox.press('Enter');
-    await responsePromise;
+    await this.waitForProductListToMatch(await responsePromise);
   }
 
   async filterByCategory(category: string) {
-    const responsePromise = this.waitForProductsResponse();
+    const responsePromise = this.waitForProductsResponse(
+      (body) => body.productCategory?.includes(category) ?? false,
+    );
     // filter + getByRole('checkbox'): find the visible block whose text is exactly the
     // category, then the checkbox inside it (getByLabel cannot be used: labels are not linked)
     await this.page
