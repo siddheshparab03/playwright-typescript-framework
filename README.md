@@ -49,5 +49,15 @@ therefore have their own account, so other tests logging in cannot wipe their ca
 | --- | --- |
 | `USER_EMAIL` / `USER_PASSWORD` | Login and product tests |
 | `CART_USER_EMAIL` / `CART_USER_PASSWORD` | Cart tests only |
+| `ORDER_USER_EMAIL` / `ORDER_USER_PASSWORD` | Checkout and order tests only (their orders are deleted after each test) |
 
-Do not log in to the site with the cart account while the cart tests are running.
+Do not log in to the site with the cart or order account while their tests are running.
+
+## Known bugs covered by `test.fail()`
+
+| Test | Bug |
+| --- | --- |
+| TC_PROD_05 | Product search is case-sensitive ("zara" does not find "ZARA COAT 3") |
+| TC_ORDER_07 | Checkout places the order with CVV and Name on Card empty |
+
+These tests are expected to fail. If one starts passing, the bug was fixed: remove `test.fail()`.
