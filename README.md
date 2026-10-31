@@ -18,16 +18,30 @@ cp .env.example .env             # then put your login details in .env
 
 ## Running tests
 
-| Command | What it does |
-| --- | --- |
-| `npm test` | Run all tests (headless) |
-| `npm run test:headed` | Run tests with the browser visible |
-| `npm run test:smoke` | Run only tests tagged `@smoke` |
-| `npm run test:regression` | Run only tests tagged `@regression` |
-| `npx playwright test tests/cart.spec.ts` | Run only the cart tests |
-| `npm run typecheck` | Check TypeScript for errors without running tests |
-| `npm run test:ui` | Open Playwright UI mode |
-| `npm run report` | Open the last HTML report |
+| Command                                  | What it does                                      |
+| ---------------------------------------- | ------------------------------------------------- |
+| `npm test`                               | Run all tests (headless)                          |
+| `npm run test:headed`                    | Run tests with the browser visible                |
+| `npm run test:smoke`                     | Run only tests tagged `@smoke`                    |
+| `npm run test:regression`                | Run only tests tagged `@regression`               |
+| `npx playwright test tests/cart.spec.ts` | Run only the cart tests                           |
+| `npm run typecheck`                      | Check TypeScript for errors without running tests |
+| `npm run test:ui`                        | Open Playwright UI mode                           |
+| `npm run report`                         | Open the last HTML report                         |
+
+## Code quality
+
+| Command                | What it does                                                              |
+| ---------------------- | ------------------------------------------------------------------------- |
+| `npm run lint`         | ESLint: finds mistakes such as a missing `await` before a Playwright call |
+| `npm run lint:fix`     | Fixes the ESLint problems that can be fixed automatically                 |
+| `npm run format`       | Prettier: formats every file                                              |
+| `npm run format:check` | Lists files that are not formatted, without changing them                 |
+
+CI runs the type check, ESLint and the Prettier check before the tests; any of them can fail the run.
+Before pushing, run `npm run format` and `npm run lint`.
+
+TypeScript is kept on 6.0.x because `typescript-eslint` does not support TypeScript 7 yet.
 
 ## Project structure
 
@@ -71,19 +85,19 @@ request and every push to `main`. It can also be started by hand from the **Acti
 The site empties an account's cart whenever that account logs in. Tests that use the cart
 therefore have their own account, so other tests logging in cannot wipe their cart.
 
-| Account (`.env`) | Used by |
-| --- | --- |
-| `USER_EMAIL` / `USER_PASSWORD` | Login and product tests |
-| `CART_USER_EMAIL` / `CART_USER_PASSWORD` | Cart tests only |
+| Account (`.env`)                           | Used by                                                                  |
+| ------------------------------------------ | ------------------------------------------------------------------------ |
+| `USER_EMAIL` / `USER_PASSWORD`             | Login and product tests                                                  |
+| `CART_USER_EMAIL` / `CART_USER_PASSWORD`   | Cart tests only                                                          |
 | `ORDER_USER_EMAIL` / `ORDER_USER_PASSWORD` | Checkout and order tests only (their orders are deleted after each test) |
 
 Do not log in to the site with the cart or order account while their tests are running.
 
 ## Known bugs covered by `test.fail()`
 
-| Test | Bug |
-| --- | --- |
-| TC_PROD_05 | Product search is case-sensitive ("zara" does not find "ZARA COAT 3") |
-| TC_ORDER_07 | Checkout places the order with CVV and Name on Card empty |
+| Test        | Bug                                                                   |
+| ----------- | --------------------------------------------------------------------- |
+| TC_PROD_05  | Product search is case-sensitive ("zara" does not find "ZARA COAT 3") |
+| TC_ORDER_07 | Checkout places the order with CVV and Name on Card empty             |
 
 These tests are expected to fail. If one starts passing, the bug was fixed: remove `test.fail()`.

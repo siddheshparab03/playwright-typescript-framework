@@ -43,6 +43,14 @@ jobs:
       - name: Check TypeScript
         run: npm run typecheck
 
+      - name: Check code with ESLint
+        # Fails the run on mistakes such as a missing await
+        run: npm run lint
+
+      - name: Check formatting with Prettier
+        # Fails the run if a file is not formatted; fix locally with: npm run format
+        run: npm run format:check
+
       - name: Run Playwright tests
         run: npx playwright test
         env:

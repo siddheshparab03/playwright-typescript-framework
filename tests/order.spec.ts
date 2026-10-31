@@ -1,7 +1,6 @@
 import { test, expect } from '../fixtures/pages';
 import orderData from '../test-data/orderData.json';
-import { getRequiredEnv } from '../utils/env';
-import { testUsers } from '../utils/testUsers';
+import { testUsers, getCredentials } from '../utils/testUsers';
 
 // Order tests use their OWN account (ORDER_USER_*): placing an order needs a cart, and the site
 // empties an account's cart whenever it logs in, so no other test file may use this account.
@@ -38,9 +37,11 @@ test.describe('Checkout and orders', () => {
     ordersPage,
     orderDetailsPage,
   }) => {
+    const accountEmail = getCredentials('order').email;
+
     // Checkout page shows the right product and the account email for shipping
     await expect(checkoutPage.itemTitles).toHaveText([orderData.product]);
-    await expect(checkoutPage.shippingEmailInput).toHaveValue(getRequiredEnv('ORDER_USER_EMAIL'));
+    await expect(checkoutPage.shippingEmailInput).toHaveValue(accountEmail);
 
     await checkoutPage.cvvInput.fill(orderData.card.cvv);
     await checkoutPage.nameOnCardInput.fill(orderData.card.nameOnCard);
@@ -65,11 +66,16 @@ test.describe('Checkout and orders', () => {
     await expect(orderDetailsPage.orderId).toHaveText(orderId);
     await expect(orderDetailsPage.productTitle).toHaveText(orderData.product);
     await expect(orderDetailsPage.productPrice).toHaveText(historyPrice!.trim());
-    await expect(orderDetailsPage.deliveryAddress).toContainText(`Country - ${orderData.country.name}`);
-    await expect(orderDetailsPage.billingAddress).toContainText(getRequiredEnv('ORDER_USER_EMAIL'));
+    await expect(orderDetailsPage.deliveryAddress).toContainText(
+      `Country - ${orderData.country.name}`,
+    );
+    await expect(orderDetailsPage.billingAddress).toContainText(accountEmail);
   });
 
-  test('TC_ORDER_01: order is blocked without a country @regression', async ({ page, checkoutPage }) => {
+  test('TC_ORDER_01: order is blocked without a country @regression', async ({
+    page,
+    checkoutPage,
+  }) => {
     await checkoutPage.placeOrder();
 
     await expect(checkoutPage.shippingErrorToast).toHaveText(orderData.messages.missingShipping);
@@ -77,7 +83,9 @@ test.describe('Checkout and orders', () => {
   });
 
   for (const data of orderData.coupons) {
-    test(`${data.id}: ${data.scenario} shows "${data.expectedMessage}" @regression`, async ({ checkoutPage }) => {
+    test(`${data.id}: ${data.scenario} shows "${data.expectedMessage}" @regression`, async ({
+      checkoutPage,
+    }) => {
       await checkoutPage.applyCoupon(data.code);
 
       await expect(checkoutPage.couponMessage).toHaveText(data.expectedMessage);
@@ -101,7 +109,10 @@ test.describe('Checkout and orders', () => {
     await expect(ordersPage.orderRow(orderId)).toHaveCount(0);
   });
 
-  test('TC_ORDER_07: order needs CVV and name on card @regression', async ({ page, checkoutPage }) => {
+  test('TC_ORDER_07: order needs CVV and name on card @regression', async ({
+    page,
+    checkoutPage,
+  }) => {
     // Known bug: the order is placed even with CVV and Name on Card empty.
     // afterEach deletes the order that the bug lets through.
     test.fail(true, 'Bug: checkout accepts an empty CVV and name on card');
