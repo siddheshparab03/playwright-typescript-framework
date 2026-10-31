@@ -11,122 +11,126 @@ test.use({ storageState: testUsers.order.storageStateFile });
 test.describe.configure({ mode: 'default' });
 
 test.describe('Checkout and orders', () => {
-  test.beforeEach(async ({ dashboardPage, cartPage, checkoutPage }) => {
-    // Clean start: empty cart, then put one product in it and go to checkout
-    await cartPage.goto();
-    await cartPage.emptyCart();
-    await dashboardPage.goto();
-    await dashboardPage.addProductToCart(orderData.product);
-    await expect(dashboardPage.cartCount).toHaveText('1');
-    await dashboardPage.openCart();
-    await cartPage.checkoutButton.click();
-    await checkoutPage.waitForPageToLoad();
+  // Clean start and clean-up through the API: no orders and an empty cart for this account
+  test.beforeEach(async ({ api }) => {
+    await api.deleteAllOrders();
+    await api.emptyCart();
   });
 
-  // Clean up: delete every order this account created, and empty its cart
-  test.afterEach(async ({ ordersPage, cartPage }) => {
-    await ordersPage.deleteAllOrders();
-    await cartPage.goto();
-    await cartPage.emptyCart();
+  test.afterEach(async ({ api }) => {
+    await api.deleteAllOrders();
+    await api.emptyCart();
   });
 
-  test('TC_ORDER_02: user can place an order end to end @smoke', async ({
-    page,
-    checkoutPage,
-    orderConfirmationPage,
-    ordersPage,
-    orderDetailsPage,
-  }) => {
-    const accountEmail = getCredentials('order').email;
+  test.describe('Checkout', () => {
+    // Put one product in the cart through the API (1 request instead of 3 screens),
+    // then open the checkout page in the browser: that page is what these tests check
+    test.beforeEach(async ({ api, cartPage, checkoutPage }) => {
+      await api.addToCart(orderData.product);
+      await cartPage.goto();
+      await cartPage.checkoutButton.click();
+      await checkoutPage.waitForPageToLoad();
+    });
 
-    // Checkout page shows the right product and the account email for shipping
-    await expect(checkoutPage.itemTitles).toHaveText([orderData.product]);
-    await expect(checkoutPage.shippingEmailInput).toHaveValue(accountEmail);
+    test('TC_ORDER_02: user can place an order end to end @smoke', async ({
+      page,
+      checkoutPage,
+      orderConfirmationPage,
+      ordersPage,
+      orderDetailsPage,
+    }) => {
+      const accountEmail = getCredentials('order').email;
 
-    await checkoutPage.cvvInput.fill(orderData.card.cvv);
-    await checkoutPage.nameOnCardInput.fill(orderData.card.nameOnCard);
-    await checkoutPage.selectCountry(orderData.country.searchText, orderData.country.name);
-    await checkoutPage.placeOrder();
+      // Checkout page shows the right product and the account email for shipping
+      await expect(checkoutPage.itemTitles).toHaveText([orderData.product]);
+      await expect(checkoutPage.shippingEmailInput).toHaveValue(accountEmail);
 
-    // Thank-you page: heading and an order id
-    await expect(orderConfirmationPage.heading).toBeVisible();
-    await expect(page.locator('#toast-container')).toContainText(orderData.messages.orderPlaced);
-    const orderId = await orderConfirmationPage.getOrderId();
-    expect(orderId).toMatch(/^[a-f0-9]{24}$/);
+      await checkoutPage.cvvInput.fill(orderData.card.cvv);
+      await checkoutPage.nameOnCardInput.fill(orderData.card.nameOnCard);
+      await checkoutPage.selectCountry(orderData.country.searchText, orderData.country.name);
+      await checkoutPage.placeOrder();
 
-    // The same order appears in the order history with the right product and price
-    await orderConfirmationPage.ordersHistoryLink.click();
-    await expect(ordersPage.orderRow(orderId)).toBeVisible();
-    await expect(ordersPage.productNameCell(orderId)).toHaveText(orderData.product);
-    const historyPrice = await ordersPage.priceCell(orderId).textContent();
+      // Thank-you page: heading and an order id
+      await expect(orderConfirmationPage.heading).toBeVisible();
+      await expect(page.locator('#toast-container')).toContainText(orderData.messages.orderPlaced);
+      const orderId = await orderConfirmationPage.getOrderId();
+      expect(orderId).toMatch(/^[a-f0-9]{24}$/);
 
-    // Order details show the same id, product, price and the chosen country
-    await ordersPage.viewOrder(orderId);
-    await expect(page).toHaveURL(new RegExp(`order-details/${orderId}`));
-    await expect(orderDetailsPage.orderId).toHaveText(orderId);
-    await expect(orderDetailsPage.productTitle).toHaveText(orderData.product);
-    await expect(orderDetailsPage.productPrice).toHaveText(historyPrice!.trim());
-    await expect(orderDetailsPage.deliveryAddress).toContainText(
-      `Country - ${orderData.country.name}`,
-    );
-    await expect(orderDetailsPage.billingAddress).toContainText(accountEmail);
-  });
+      // The same order appears in the order history with the right product and price
+      await orderConfirmationPage.ordersHistoryLink.click();
+      await expect(ordersPage.orderRow(orderId)).toBeVisible();
+      await expect(ordersPage.productNameCell(orderId)).toHaveText(orderData.product);
+      const historyPrice = await ordersPage.priceCell(orderId).textContent();
 
-  test('TC_ORDER_01: order is blocked without a country @regression', async ({
-    page,
-    checkoutPage,
-  }) => {
-    await checkoutPage.placeOrder();
+      // Order details show the same id, product, price and the chosen country
+      await ordersPage.viewOrder(orderId);
+      await expect(page).toHaveURL(new RegExp(`order-details/${orderId}`));
+      await expect(orderDetailsPage.orderId).toHaveText(orderId);
+      await expect(orderDetailsPage.productTitle).toHaveText(orderData.product);
+      await expect(orderDetailsPage.productPrice).toHaveText(historyPrice!.trim());
+      await expect(orderDetailsPage.deliveryAddress).toContainText(
+        `Country - ${orderData.country.name}`,
+      );
+      await expect(orderDetailsPage.billingAddress).toContainText(accountEmail);
+    });
 
-    await expect(checkoutPage.shippingErrorToast).toHaveText(orderData.messages.missingShipping);
-    await expect(page).toHaveURL(/dashboard\/order/);
-  });
-
-  for (const data of orderData.coupons) {
-    test(`${data.id}: ${data.scenario} shows "${data.expectedMessage}" @regression`, async ({
+    test('TC_ORDER_01: order is blocked without a country @regression', async ({
+      page,
       checkoutPage,
     }) => {
-      await checkoutPage.applyCoupon(data.code);
+      await checkoutPage.placeOrder();
 
-      await expect(checkoutPage.couponMessage).toHaveText(data.expectedMessage);
+      await expect(checkoutPage.shippingErrorToast).toHaveText(orderData.messages.missingShipping);
+      await expect(page).toHaveURL(/dashboard\/order/);
     });
-  }
 
-  test('TC_ORDER_06: user can delete an order from the history @regression', async ({
-    checkoutPage,
-    orderConfirmationPage,
-    ordersPage,
-  }) => {
-    await checkoutPage.selectCountry(orderData.country.searchText, orderData.country.name);
-    await checkoutPage.placeOrder();
-    await expect(orderConfirmationPage.heading).toBeVisible();
-    const orderId = await orderConfirmationPage.getOrderId();
+    for (const data of orderData.coupons) {
+      test(`${data.id}: ${data.scenario} shows "${data.expectedMessage}" @regression`, async ({
+        checkoutPage,
+      }) => {
+        await checkoutPage.applyCoupon(data.code);
 
-    await ordersPage.goto();
-    await ordersPage.deleteOrder(orderId);
+        await expect(checkoutPage.couponMessage).toHaveText(data.expectedMessage);
+      });
+    }
 
-    await expect(ordersPage.deletedToast).toBeVisible();
-    await expect(ordersPage.orderRow(orderId)).toHaveCount(0);
+    test('TC_ORDER_07: order needs CVV and name on card @regression', async ({
+      page,
+      checkoutPage,
+    }) => {
+      // Known bug: the order is placed even with CVV and Name on Card empty.
+      // afterEach deletes the order that the bug lets through.
+      test.fail(true, 'Bug: checkout accepts an empty CVV and name on card');
+
+      await checkoutPage.cvvInput.clear();
+      await checkoutPage.nameOnCardInput.clear();
+      await checkoutPage.selectCountry(orderData.country.searchText, orderData.country.name);
+      await checkoutPage.placeOrder();
+
+      // Expected: an error message, and the user stays on checkout.
+      // Actual (bug): no error, the order is created and the thank-you page opens.
+      // We check for the error message, not "URL is not thanks": right after the click the URL has
+      // not changed yet, so a "not" check would pass too early, while the order is still being created.
+      await expect(checkoutPage.errorToast).toBeVisible({ timeout: 5_000 });
+      await expect(page).toHaveURL(/dashboard\/order/);
+    });
   });
 
-  test('TC_ORDER_07: order needs CVV and name on card @regression', async ({
-    page,
-    checkoutPage,
-  }) => {
-    // Known bug: the order is placed even with CVV and Name on Card empty.
-    // afterEach deletes the order that the bug lets through.
-    test.fail(true, 'Bug: checkout accepts an empty CVV and name on card');
+  test.describe('Order history', () => {
+    test('TC_ORDER_06: user can delete an order from the history @regression', async ({
+      api,
+      ordersPage,
+    }) => {
+      // This test checks DELETING, so the order is created through the API in about a second,
+      // instead of going through cart and checkout in the browser
+      const orderId = await api.createOrder(orderData.product, orderData.country.name);
 
-    await checkoutPage.cvvInput.clear();
-    await checkoutPage.nameOnCardInput.clear();
-    await checkoutPage.selectCountry(orderData.country.searchText, orderData.country.name);
-    await checkoutPage.placeOrder();
+      await ordersPage.goto();
+      await expect(ordersPage.orderRow(orderId)).toBeVisible();
+      await ordersPage.deleteOrder(orderId);
 
-    // Expected: an error message, and the user stays on checkout.
-    // Actual (bug): no error, the order is created and the thank-you page opens.
-    // We check for the error message, not "URL is not thanks": right after the click the URL has
-    // not changed yet, so a "not" check would pass too early, while the order is still being created.
-    await expect(checkoutPage.errorToast).toBeVisible({ timeout: 5_000 });
-    await expect(page).toHaveURL(/dashboard\/order/);
+      await expect(ordersPage.deletedToast).toBeVisible();
+      await expect(ordersPage.orderRow(orderId)).toHaveCount(0);
+    });
   });
 });

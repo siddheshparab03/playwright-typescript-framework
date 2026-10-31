@@ -12,18 +12,16 @@ test.use({ storageState: testUsers.cart.storageStateFile });
 test.describe.configure({ mode: 'default' });
 
 test.describe('Cart', () => {
-  test.beforeEach(async ({ dashboardPage, cartPage }) => {
-    // Clean start: every test begins with an empty cart
-    await cartPage.goto();
-    await cartPage.emptyCart();
+  test.beforeEach(async ({ api, dashboardPage }) => {
+    // Clean start through the API (no screens needed): every test begins with an empty cart
+    await api.emptyCart();
     await dashboardPage.goto();
     await expect(dashboardPage.productCards.first()).toBeVisible();
   });
 
-  // Clean up after each test too, so other test files (and you) find an empty cart
-  test.afterEach(async ({ cartPage }) => {
-    await cartPage.goto();
-    await cartPage.emptyCart();
+  // Clean up after each test too, so the next run (and you) find an empty cart
+  test.afterEach(async ({ api }) => {
+    await api.emptyCart();
   });
 
   test('TC_CART_01: user can add a product to the cart @smoke', async ({
@@ -73,14 +71,16 @@ test.describe('Cart', () => {
   });
 
   test('TC_CART_04: user can remove a product from the cart @regression', async ({
+    api,
     dashboardPage,
     cartPage,
   }) => {
+    // This test checks REMOVING, so the product is put in the cart through the API
     const productName = productData.cart.singleProduct;
-    await dashboardPage.addProductToCart(productName);
-    await expect(dashboardPage.cartCount).toHaveText('1');
+    await api.addToCart(productName);
 
     await cartPage.goto();
+    await expect(cartPage.itemNames).toHaveText([productName]);
     await cartPage.removeItem(productName);
 
     await expect(cartPage.emptyCartMessage).toBeVisible();

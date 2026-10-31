@@ -7,9 +7,11 @@ import { CheckoutPage } from '../pages/CheckoutPage';
 import { OrderConfirmationPage } from '../pages/OrderConfirmationPage';
 import { OrdersPage } from '../pages/OrdersPage';
 import { OrderDetailsPage } from '../pages/OrderDetailsPage';
+import { ApiClient } from '../utils/apiClient';
 
-/** Every page object a test can ask for. */
+/** Every page object a test can ask for, plus the API helper. */
 type PageObjects = {
+  api: ApiClient;
   loginPage: LoginPage;
   dashboardPage: DashboardPage;
   productDetailsPage: ProductDetailsPage;
@@ -27,6 +29,15 @@ type PageObjects = {
  * Tests import `test` and `expect` from this file instead of '@playwright/test'.
  */
 export const test = base.extend<PageObjects>({
+  // `request` is Playwright's built-in HTTP client (uses baseURL from the config).
+  // `storageState` is the saved-login file the test file chose with test.use({ storageState }),
+  // so the API acts on the same account as the test's browser.
+  api: async ({ request, storageState }, use) => {
+    if (typeof storageState !== 'string') {
+      throw new Error('The api fixture needs test.use({ storageState: <saved-login file> })');
+    }
+    await use(ApiClient.fromStorageState(request, storageState));
+  },
   loginPage: async ({ page }, use) => {
     await use(new LoginPage(page));
   },
