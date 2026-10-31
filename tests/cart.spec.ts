@@ -26,7 +26,11 @@ test.describe('Cart', () => {
     await cartPage.emptyCart();
   });
 
-  test('TC_CART_01: user can add a product to the cart @smoke', async ({ page, dashboardPage, cartPage }) => {
+  test('TC_CART_01: user can add a product to the cart @smoke', async ({
+    page,
+    dashboardPage,
+    cartPage,
+  }) => {
     const productName = productData.cart.singleProduct;
 
     await dashboardPage.addProductToCart(productName);
@@ -39,7 +43,10 @@ test.describe('Cart', () => {
     await expect(cartPage.itemNames).toHaveText([productName]);
   });
 
-  test('TC_CART_02: cart total equals the sum of item prices @regression', async ({ dashboardPage, cartPage }) => {
+  test('TC_CART_02: cart total equals the sum of item prices @regression', async ({
+    dashboardPage,
+    cartPage,
+  }) => {
     const products = productData.cart.multipleProducts;
 
     for (const [index, productName] of products.entries()) {
@@ -65,7 +72,10 @@ test.describe('Cart', () => {
     await expect(cartPage.checkoutButton).toBeHidden();
   });
 
-  test('TC_CART_04: user can remove a product from the cart @regression', async ({ dashboardPage, cartPage }) => {
+  test('TC_CART_04: user can remove a product from the cart @regression', async ({
+    dashboardPage,
+    cartPage,
+  }) => {
     const productName = productData.cart.singleProduct;
     await dashboardPage.addProductToCart(productName);
     await expect(dashboardPage.cartCount).toHaveText('1');

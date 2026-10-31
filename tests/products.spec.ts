@@ -11,7 +11,9 @@ test.describe('Products', () => {
     await expect(dashboardPage.productCards.first()).toBeVisible();
   });
 
-  test('TC_PROD_01: products are listed with name, price and buttons @smoke', async ({ dashboardPage }) => {
+  test('TC_PROD_01: products are listed with name, price and buttons @smoke', async ({
+    dashboardPage,
+  }) => {
     const cardCount = await dashboardPage.productCards.count();
     expect(cardCount).toBeGreaterThan(0);
 
@@ -39,7 +41,9 @@ test.describe('Products', () => {
     });
   }
 
-  test(`${productData.knownBugs.caseInsensitiveSearch.id}: search ignores upper/lower case @regression`, async ({ dashboardPage }) => {
+  test(`${productData.knownBugs.caseInsensitiveSearch.id}: search ignores upper/lower case @regression`, async ({
+    dashboardPage,
+  }) => {
     // Known bug: search is case-sensitive. The page shows "ZARA COAT 3", but typing "zara" finds nothing.
     // test.fail() marks this test as EXPECTED to fail. If the bug is ever fixed, this test will
     // "unexpectedly pass" and turn red, reminding us to remove test.fail().
@@ -51,7 +55,9 @@ test.describe('Products', () => {
     await expect(dashboardPage.productCard(data.expectedProduct)).toBeVisible({ timeout: 5_000 });
   });
 
-  test(`${productData.categoryFilter.id}: filter by category shows only that category @regression`, async ({ dashboardPage }) => {
+  test(`${productData.categoryFilter.id}: filter by category shows only that category @regression`, async ({
+    dashboardPage,
+  }) => {
     const category = productData.categoryFilter.category;
 
     // filterByCategory returns the server's answer, so we can compare page and data
@@ -66,7 +72,11 @@ test.describe('Products', () => {
     await expect(dashboardPage.productCards).toHaveCount(body.data.length);
   });
 
-  test('TC_PROD_04: product details match the product card @regression', async ({ page, dashboardPage, productDetailsPage }) => {
+  test('TC_PROD_04: product details match the product card @regression', async ({
+    page,
+    dashboardPage,
+    productDetailsPage,
+  }) => {
     const productName = productData.productToView;
     const card = dashboardPage.productCard(productName);
     const cardPrice = await card.locator('.text-muted').textContent();
