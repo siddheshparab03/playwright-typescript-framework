@@ -48,8 +48,24 @@ export class ApiClient {
     return new ApiClient(request, item.value);
   }
 
+  /**
+   * Logs in through the API (no browser) and returns a client for that account.
+   * Note: like a browser login, this empties the account's cart.
+   */
+  static async login(
+    request: APIRequestContext,
+    email: string,
+    password: string,
+  ): Promise<ApiClient> {
+    const response = await request.post('/api/ecom/auth/login', {
+      data: { userEmail: email, userPassword: password },
+    });
+    await expect(response, `API login failed for ${email}`).toBeOK();
+    return new ApiClient(request, (await response.json()).token);
+  }
+
   /** The site expects the token as-is in the Authorization header (no "Bearer " in front). */
-  private get headers() {
+  get authHeaders() {
     return { Authorization: this.token };
   }
 
@@ -60,7 +76,7 @@ export class ApiClient {
 
   async getProducts(): Promise<Product[]> {
     const response = await this.request.post('/api/ecom/product/get-all-products', {
-      headers: this.headers,
+      headers: this.authHeaders,
       data: {
         productName: '',
         minPrice: null,
@@ -86,7 +102,7 @@ export class ApiClient {
     const product = await this.findProduct(productName);
     // The API wants the whole product object, exactly as get-all-products returned it
     const response = await this.request.post('/api/ecom/user/add-to-cart', {
-      headers: this.headers,
+      headers: this.authHeaders,
       data: { _id: this.userId, product },
     });
     await this.expectOk(response, `add "${productName}" to the cart`);
@@ -94,7 +110,7 @@ export class ApiClient {
 
   async getCartProducts(): Promise<Product[]> {
     const response = await this.request.get(`/api/ecom/user/get-cart-products/${this.userId}`, {
-      headers: this.headers,
+      headers: this.authHeaders,
     });
     await this.expectOk(response, 'get cart products');
     // An empty cart has no "products" field, only the message "No Product in Cart"
@@ -105,7 +121,7 @@ export class ApiClient {
     for (const product of await this.getCartProducts()) {
       const response = await this.request.delete(
         `/api/ecom/user/remove-from-cart/${this.userId}/${product._id}`,
-        { headers: this.headers },
+        { headers: this.authHeaders },
       );
       await this.expectOk(response, `remove "${product.productName}" from the cart`);
     }
@@ -118,7 +134,7 @@ export class ApiClient {
   async createOrder(productName: string, country: string): Promise<string> {
     const product = await this.findProduct(productName);
     const response = await this.request.post('/api/ecom/order/create-order', {
-      headers: this.headers,
+      headers: this.authHeaders,
       data: { orders: [{ country, productOrderedId: product._id }] },
     });
     await this.expectOk(response, `create an order for "${productName}"`);
@@ -128,7 +144,7 @@ export class ApiClient {
   async getOrders(): Promise<Order[]> {
     const response = await this.request.get(
       `/api/ecom/order/get-orders-for-customer/${this.userId}`,
-      { headers: this.headers },
+      { headers: this.authHeaders },
     );
     await this.expectOk(response, 'get my orders');
     return (await response.json()).data ?? [];
@@ -137,7 +153,7 @@ export class ApiClient {
   async deleteAllOrders() {
     for (const order of await this.getOrders()) {
       const response = await this.request.delete(`/api/ecom/order/delete-order/${order._id}`, {
-        headers: this.headers,
+        headers: this.authHeaders,
       });
       await this.expectOk(response, `delete order ${order._id}`);
     }

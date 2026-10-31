@@ -50,9 +50,14 @@ export default defineConfig({
     //    Each test file chooses which saved login to use with test.use({ storageState }).
     {
       name: 'chromium',
-      testIgnore: /.*\.setup\.ts/,
+      testIgnore: [/.*\.setup\.ts/, /tests[\\/]api[\\/]/],
       dependencies: ['setup'],
       use: { ...devices['Desktop Chrome'] },
+    },
+    // 3. API tests: talk to the server directly, so they need no browser and no saved logins
+    {
+      name: 'api',
+      testMatch: /tests[\\/]api[\\/].*\.spec\.ts/,
     },
   ],
 });

@@ -1,0 +1,14 @@
+{
+  "product": "ZARA COAT 3",
+  "searchText": "ZARA",
+  "country": "India",
+  "messages": {
+    "loginSuccess": "Login Successfully",
+    "loginFailed": "Incorrect email or password.",
+    "noToken": "Access denied. No token provided.",
+    "invalidToken": "Session Timeout",
+    "orderPlaced": "Order Placed Successfully",
+    "orderDeleted": "Orders Deleted Successfully",
+    "noOrders": "No Orders"
+  }
+}
