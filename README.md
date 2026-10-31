@@ -18,16 +18,17 @@ cp .env.example .env             # then put your login details in .env
 
 ## Running tests
 
-| Command                                  | What it does                                      |
-| ---------------------------------------- | ------------------------------------------------- |
-| `npm test`                               | Run all tests (headless)                          |
-| `npm run test:headed`                    | Run tests with the browser visible                |
-| `npm run test:smoke`                     | Run only tests tagged `@smoke`                    |
-| `npm run test:regression`                | Run only tests tagged `@regression`               |
-| `npx playwright test tests/cart.spec.ts` | Run only the cart tests                           |
-| `npm run typecheck`                      | Check TypeScript for errors without running tests |
-| `npm run test:ui`                        | Open Playwright UI mode                           |
-| `npm run report`                         | Open the last HTML report                         |
+| Command                                  | What it does                                       |
+| ---------------------------------------- | -------------------------------------------------- |
+| `npm test`                               | Run all tests (headless)                           |
+| `npm run test:headed`                    | Run tests with the browser visible                 |
+| `npm run test:smoke`                     | Run only tests tagged `@smoke`                     |
+| `npm run test:regression`                | Run only tests tagged `@regression`                |
+| `npm run test:api`                       | Run only the API tests (no browser, a few seconds) |
+| `npx playwright test tests/cart.spec.ts` | Run only the cart tests                            |
+| `npm run typecheck`                      | Check TypeScript for errors without running tests  |
+| `npm run test:ui`                        | Open Playwright UI mode                            |
+| `npm run report`                         | Open the last HTML report                          |
 
 ## Code quality
 
@@ -46,12 +47,13 @@ TypeScript is kept on 6.0.x because `typescript-eslint` does not support TypeScr
 ## Project structure
 
 ```
-tests/                 Test files (*.spec.ts): what to check
+tests/                 Browser test files (*.spec.ts): what to check
+tests/api/             API test files: call the server directly, no browser
 tests/auth.setup.ts    Logs in once per test account before the tests run
 pages/                 Page Objects: locators and actions for each page
 fixtures/pages.ts      Gives tests their page objects, e.g. async ({ cartPage }) => ...
 test-data/             JSON test data for data-driven tests
-utils/                 Small shared helpers (reading .env values, test accounts)
+utils/                 Shared helpers: .env values, test accounts, apiClient.ts (API calls)
 playwright.config.ts   Playwright settings (browser, base URL, reports, setup project)
 playwright/.auth/      Saved logins created by the setup (git-ignored: contains tokens)
 .env.example           Template for environment variables
@@ -64,7 +66,10 @@ playwright/.auth/      Saved logins created by the setup (git-ignored: contains 
 2. The `chromium` project then runs the tests. Product, cart and order tests load their
    account's saved login with `test.use({ storageState })`, so they start already logged in.
    Login tests start logged out, because they test the login screen itself.
-3. A failed test is retried once (twice on CI); a test that passes on retry is reported as flaky.
+3. Cart and order tests prepare and clean up their data through the API (`api` fixture,
+   `utils/apiClient.ts`) and use the browser only for what they check.
+4. The `api` project runs the API tests in `tests/api/`. They need no browser and no setup.
+5. A failed test is retried once (twice on CI); a test that passes on retry is reported as flaky.
 
 ## Continuous integration (GitHub Actions)
 
