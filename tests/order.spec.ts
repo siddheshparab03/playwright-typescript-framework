@@ -1,11 +1,4 @@
-import { test, expect } from '@playwright/test';
-import { LoginPage } from '../pages/LoginPage';
-import { DashboardPage } from '../pages/DashboardPage';
-import { CartPage } from '../pages/CartPage';
-import { CheckoutPage } from '../pages/CheckoutPage';
-import { OrderConfirmationPage } from '../pages/OrderConfirmationPage';
-import { OrdersPage } from '../pages/OrdersPage';
-import { OrderDetailsPage } from '../pages/OrderDetailsPage';
+import { test, expect } from '../fixtures/pages';
 import orderData from '../test-data/orderData.json';
 import { getRequiredEnv } from '../utils/env';
 
@@ -15,18 +8,7 @@ import { getRequiredEnv } from '../utils/env';
 test.describe.configure({ mode: 'default' });
 
 test.describe('Checkout and orders', () => {
-  let dashboardPage: DashboardPage;
-  let cartPage: CartPage;
-  let checkoutPage: CheckoutPage;
-  let ordersPage: OrdersPage;
-
-  test.beforeEach(async ({ page }) => {
-    const loginPage = new LoginPage(page);
-    dashboardPage = new DashboardPage(page);
-    cartPage = new CartPage(page);
-    checkoutPage = new CheckoutPage(page);
-    ordersPage = new OrdersPage(page);
-
+  test.beforeEach(async ({ page, loginPage, dashboardPage, cartPage, checkoutPage }) => {
     await loginPage.goto();
     await loginPage.login(getRequiredEnv('ORDER_USER_EMAIL'), getRequiredEnv('ORDER_USER_PASSWORD'));
     await expect(page).toHaveURL(/dashboard\/dash/);
@@ -43,13 +25,19 @@ test.describe('Checkout and orders', () => {
   });
 
   // Clean up: delete every order this account created, and empty its cart
-  test.afterEach(async () => {
+  test.afterEach(async ({ ordersPage, cartPage }) => {
     await ordersPage.deleteAllOrders();
     await cartPage.goto();
     await cartPage.emptyCart();
   });
 
-  test('TC_ORDER_02: user can place an order end to end @smoke', async ({ page }) => {
+  test('TC_ORDER_02: user can place an order end to end @smoke', async ({
+    page,
+    checkoutPage,
+    orderConfirmationPage,
+    ordersPage,
+    orderDetailsPage,
+  }) => {
     // Checkout page shows the right product and the account email for shipping
     await expect(checkoutPage.itemTitles).toHaveText([orderData.product]);
     await expect(checkoutPage.shippingEmailInput).toHaveValue(getRequiredEnv('ORDER_USER_EMAIL'));
@@ -60,30 +48,28 @@ test.describe('Checkout and orders', () => {
     await checkoutPage.placeOrder();
 
     // Thank-you page: heading and an order id
-    const confirmationPage = new OrderConfirmationPage(page);
-    await expect(confirmationPage.heading).toBeVisible();
+    await expect(orderConfirmationPage.heading).toBeVisible();
     await expect(page.locator('#toast-container')).toContainText(orderData.messages.orderPlaced);
-    const orderId = await confirmationPage.getOrderId();
+    const orderId = await orderConfirmationPage.getOrderId();
     expect(orderId).toMatch(/^[a-f0-9]{24}$/);
 
     // The same order appears in the order history with the right product and price
-    await confirmationPage.ordersHistoryLink.click();
+    await orderConfirmationPage.ordersHistoryLink.click();
     await expect(ordersPage.orderRow(orderId)).toBeVisible();
     await expect(ordersPage.productNameCell(orderId)).toHaveText(orderData.product);
     const historyPrice = await ordersPage.priceCell(orderId).textContent();
 
     // Order details show the same id, product, price and the chosen country
     await ordersPage.viewOrder(orderId);
-    const detailsPage = new OrderDetailsPage(page);
     await expect(page).toHaveURL(new RegExp(`order-details/${orderId}`));
-    await expect(detailsPage.orderId).toHaveText(orderId);
-    await expect(detailsPage.productTitle).toHaveText(orderData.product);
-    await expect(detailsPage.productPrice).toHaveText(historyPrice!.trim());
-    await expect(detailsPage.deliveryAddress).toContainText(`Country - ${orderData.country.name}`);
-    await expect(detailsPage.billingAddress).toContainText(getRequiredEnv('ORDER_USER_EMAIL'));
+    await expect(orderDetailsPage.orderId).toHaveText(orderId);
+    await expect(orderDetailsPage.productTitle).toHaveText(orderData.product);
+    await expect(orderDetailsPage.productPrice).toHaveText(historyPrice!.trim());
+    await expect(orderDetailsPage.deliveryAddress).toContainText(`Country - ${orderData.country.name}`);
+    await expect(orderDetailsPage.billingAddress).toContainText(getRequiredEnv('ORDER_USER_EMAIL'));
   });
 
-  test('TC_ORDER_01: order is blocked without a country @regression', async ({ page }) => {
+  test('TC_ORDER_01: order is blocked without a country @regression', async ({ page, checkoutPage }) => {
     await checkoutPage.placeOrder();
 
     await expect(checkoutPage.shippingErrorToast).toHaveText(orderData.messages.missingShipping);
@@ -91,19 +77,22 @@ test.describe('Checkout and orders', () => {
   });
 
   for (const data of orderData.coupons) {
-    test(`${data.id}: ${data.scenario} shows "${data.expectedMessage}" @regression`, async () => {
+    test(`${data.id}: ${data.scenario} shows "${data.expectedMessage}" @regression`, async ({ checkoutPage }) => {
       await checkoutPage.applyCoupon(data.code);
 
       await expect(checkoutPage.couponMessage).toHaveText(data.expectedMessage);
     });
   }
 
-  test('TC_ORDER_06: user can delete an order from the history @regression', async ({ page }) => {
+  test('TC_ORDER_06: user can delete an order from the history @regression', async ({
+    checkoutPage,
+    orderConfirmationPage,
+    ordersPage,
+  }) => {
     await checkoutPage.selectCountry(orderData.country.searchText, orderData.country.name);
     await checkoutPage.placeOrder();
-    const confirmationPage = new OrderConfirmationPage(page);
-    await expect(confirmationPage.heading).toBeVisible();
-    const orderId = await confirmationPage.getOrderId();
+    await expect(orderConfirmationPage.heading).toBeVisible();
+    const orderId = await orderConfirmationPage.getOrderId();
 
     await ordersPage.goto();
     await ordersPage.deleteOrder(orderId);
@@ -112,7 +101,7 @@ test.describe('Checkout and orders', () => {
     await expect(ordersPage.orderRow(orderId)).toHaveCount(0);
   });
 
-  test('TC_ORDER_07: order needs CVV and name on card @regression', async ({ page }) => {
+  test('TC_ORDER_07: order needs CVV and name on card @regression', async ({ page, checkoutPage }) => {
     // Known bug: the order is placed even with CVV and Name on Card empty.
     // afterEach deletes the order that the bug lets through.
     test.fail(true, 'Bug: checkout accepts an empty CVV and name on card');
