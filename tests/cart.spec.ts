@@ -1,21 +1,18 @@
 import { test, expect } from '../fixtures/pages';
 import productData from '../test-data/productData.json';
-import { getRequiredEnv } from '../utils/env';
+import { testUsers } from '../utils/testUsers';
 
 // The site stores the cart on the server and empties it whenever the account logs in again.
-// So the cart tests use their OWN account (CART_USER_*), which no other test file logs in with.
+// So the cart tests use their OWN account (CART_USER_*), which no other test file uses, and start
+// already logged in with it (saved by tests/auth.setup.ts).
+test.use({ storageState: testUsers.cart.storageStateFile });
 
 // The tests in this file share that one account, so they must not run at the same time:
 // mode 'default' runs them one after another in a single worker.
 test.describe.configure({ mode: 'default' });
 
 test.describe('Cart', () => {
-  test.beforeEach(async ({ page, loginPage, dashboardPage, cartPage }) => {
-    await loginPage.goto();
-    // Read inside beforeEach: if the values are missing, only the cart tests fail
-    await loginPage.login(getRequiredEnv('CART_USER_EMAIL'), getRequiredEnv('CART_USER_PASSWORD'));
-    await expect(page).toHaveURL(/dashboard\/dash/);
-
+  test.beforeEach(async ({ dashboardPage, cartPage }) => {
     // Clean start: every test begins with an empty cart
     await cartPage.goto();
     await cartPage.emptyCart();

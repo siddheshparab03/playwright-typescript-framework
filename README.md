@@ -33,12 +33,24 @@ cp .env.example .env             # then put your login details in .env
 
 ```
 tests/                 Test files (*.spec.ts): what to check
+tests/auth.setup.ts    Logs in once per test account before the tests run
 pages/                 Page Objects: locators and actions for each page
+fixtures/pages.ts      Gives tests their page objects, e.g. async ({ cartPage }) => ...
 test-data/             JSON test data for data-driven tests
-utils/                 Small shared helpers (e.g. reading .env values)
-playwright.config.ts   Playwright settings (browser, base URL, reports)
+utils/                 Small shared helpers (reading .env values, test accounts)
+playwright.config.ts   Playwright settings (browser, base URL, reports, setup project)
+playwright/.auth/      Saved logins created by the setup (git-ignored: contains tokens)
 .env.example           Template for environment variables
 ```
+
+## How a run works
+
+1. The `setup` project (`tests/auth.setup.ts`) logs in once with each account in `.env` and
+   saves the logged-in browser state to `playwright/.auth/`.
+2. The `chromium` project then runs the tests. Product, cart and order tests load their
+   account's saved login with `test.use({ storageState })`, so they start already logged in.
+   Login tests start logged out, because they test the login screen itself.
+3. A failed test is retried once (twice on CI); a test that passes on retry is reported as flaky.
 
 ## Test accounts
 

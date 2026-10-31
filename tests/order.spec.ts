@@ -1,18 +1,18 @@
 import { test, expect } from '../fixtures/pages';
 import orderData from '../test-data/orderData.json';
 import { getRequiredEnv } from '../utils/env';
+import { testUsers } from '../utils/testUsers';
 
 // Order tests use their OWN account (ORDER_USER_*): placing an order needs a cart, and the site
 // empties an account's cart whenever it logs in, so no other test file may use this account.
-// The tests below share it with each other, so they run one after another.
+// Every test starts already logged in with it (saved by tests/auth.setup.ts).
+test.use({ storageState: testUsers.order.storageStateFile });
+
+// The tests below share that account with each other, so they run one after another.
 test.describe.configure({ mode: 'default' });
 
 test.describe('Checkout and orders', () => {
-  test.beforeEach(async ({ page, loginPage, dashboardPage, cartPage, checkoutPage }) => {
-    await loginPage.goto();
-    await loginPage.login(getRequiredEnv('ORDER_USER_EMAIL'), getRequiredEnv('ORDER_USER_PASSWORD'));
-    await expect(page).toHaveURL(/dashboard\/dash/);
-
+  test.beforeEach(async ({ dashboardPage, cartPage, checkoutPage }) => {
     // Clean start: empty cart, then put one product in it and go to checkout
     await cartPage.goto();
     await cartPage.emptyCart();

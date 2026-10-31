@@ -38,8 +38,17 @@ export default defineConfig({
   },
 
   projects: [
+    // 1. Logs in once per test account and saves each login to playwright/.auth/
+    {
+      name: 'setup',
+      testMatch: /.*\.setup\.ts/,
+    },
+    // 2. The real tests; they start only after "setup" has finished.
+    //    Each test file chooses which saved login to use with test.use({ storageState }).
     {
       name: 'chromium',
+      testIgnore: /.*\.setup\.ts/,
+      dependencies: ['setup'],
       use: { ...devices['Desktop Chrome'] },
     },
   ],
