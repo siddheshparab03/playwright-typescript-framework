@@ -71,17 +71,6 @@ export class CartPage {
     await this.cartItems.filter({ hasText: productName }).locator('.btn-danger').click();
   }
 
-  /** Deletes items one by one until the cart is empty (test clean-up). */
-  async emptyCart() {
-    let count = await this.cartItems.count();
-    while (count > 0) {
-      await this.cartItems.first().locator('.btn-danger').click();
-      count--;
-      await expect(this.cartItems).toHaveCount(count);
-    }
-    await expect(this.emptyCartMessage).toBeVisible();
-  }
-
   /** Converts every item price like "$ 11500" into the number 11500. */
   async getItemPrices(): Promise<number[]> {
     const texts = await this.itemPrices.allTextContents();

@@ -63,16 +63,4 @@ export class OrdersPage {
   async deleteOrder(orderId: string) {
     await this.orderRow(orderId).getByRole('button', { name: 'Delete' }).click();
   }
-
-  /** Test clean-up: deletes every order of the logged-in account. */
-  async deleteAllOrders() {
-    await this.goto();
-    let count = await this.orderRows.count();
-    while (count > 0) {
-      // last(): delete from the bottom of the table up
-      await this.orderRows.last().getByRole('button', { name: 'Delete' }).click();
-      count--;
-      await expect(this.orderRows).toHaveCount(count);
-    }
-  }
 }
