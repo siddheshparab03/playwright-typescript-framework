@@ -47,9 +47,10 @@ export class CartPage {
     // This is a single-page app: going to the URL we are already on does nothing,
     // so the cart would not be fetched again. Reload in that case instead.
     if (this.page.url().includes('/dashboard/cart')) {
-      await this.page.reload();
+      await this.page.reload({ waitUntil: 'domcontentloaded' });
     } else {
-      await this.page.goto('/client/#/dashboard/cart');
+      // 'domcontentloaded': do not wait for images (see LoginPage.goto)
+      await this.page.goto('/client/#/dashboard/cart', { waitUntil: 'domcontentloaded' });
     }
     await responsePromise;
     await this.waitForCartToLoad();

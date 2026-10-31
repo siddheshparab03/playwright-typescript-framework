@@ -41,7 +41,10 @@ export class LoginPage {
   }
 
   async goto() {
-    await this.page.goto('/client/#/auth/login');
+    // waitUntil 'domcontentloaded': continue as soon as the HTML is ready, without waiting for every
+    // image to download (the default, 'load'). The page's large images can take over 30 s when the
+    // site is slow, while the form is ready in under a second. Locators wait for what we need anyway.
+    await this.page.goto('/client/#/auth/login', { waitUntil: 'domcontentloaded' });
   }
 
   async login(email: string, password: string) {

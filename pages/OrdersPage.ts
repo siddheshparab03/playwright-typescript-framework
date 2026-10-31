@@ -30,9 +30,10 @@ export class OrdersPage {
       response.url().includes('get-orders-for-customer'),
     );
     if (this.page.url().includes('/dashboard/myorders')) {
-      await this.page.reload();
+      await this.page.reload({ waitUntil: 'domcontentloaded' });
     } else {
-      await this.page.goto('/client/#/dashboard/myorders');
+      // 'domcontentloaded': do not wait for images (see LoginPage.goto)
+      await this.page.goto('/client/#/dashboard/myorders', { waitUntil: 'domcontentloaded' });
     }
     await responsePromise;
     // The data has arrived; now wait until it is drawn: either order rows or the "No Orders" text

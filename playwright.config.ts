@@ -20,8 +20,9 @@ export default defineConfig({
   // Fail the CI build if someone accidentally left test.only in the code.
   forbidOnly: !!process.env.CI,
 
-  // Retry failed tests on CI only (the live site can be slow sometimes).
-  retries: process.env.CI ? 2 : 0,
+  // Retry a failed test before calling it a failure: the shared practice site is sometimes very slow.
+  // A test that fails and then passes on retry is reported as "flaky", so problems stay visible.
+  retries: process.env.CI ? 2 : 1,
 
   // HTML report to view results; 'list' prints progress in the terminal.
   reporter: [['list'], ['html', { open: 'never' }]],
