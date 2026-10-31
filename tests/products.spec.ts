@@ -1,23 +1,15 @@
-import { test, expect } from '@playwright/test';
-import { LoginPage } from '../pages/LoginPage';
-import { DashboardPage } from '../pages/DashboardPage';
-import { ProductDetailsPage } from '../pages/ProductDetailsPage';
+import { test, expect } from '../fixtures/pages';
 import productData from '../test-data/productData.json';
 
 test.describe('Products', () => {
-  let dashboardPage: DashboardPage;
-
-  test.beforeEach(async ({ page }) => {
-    const loginPage = new LoginPage(page);
-    dashboardPage = new DashboardPage(page);
-
+  test.beforeEach(async ({ page, loginPage, dashboardPage }) => {
     await loginPage.goto();
     await loginPage.login(process.env.USER_EMAIL!, process.env.USER_PASSWORD!);
     await expect(page).toHaveURL(/dashboard\/dash/);
     await expect(dashboardPage.productCards.first()).toBeVisible();
   });
 
-  test('TC_PROD_01: products are listed with name, price and buttons @smoke', async () => {
+  test('TC_PROD_01: products are listed with name, price and buttons @smoke', async ({ dashboardPage }) => {
     const cardCount = await dashboardPage.productCards.count();
     expect(cardCount).toBeGreaterThan(0);
 
@@ -34,7 +26,7 @@ test.describe('Products', () => {
   });
 
   for (const data of productData.search) {
-    test(`${data.id}: search by ${data.scenario} @regression`, async () => {
+    test(`${data.id}: search by ${data.scenario} @regression`, async ({ dashboardPage }) => {
       await dashboardPage.searchProduct(data.searchText);
 
       await expect(dashboardPage.productCard(data.expectedProduct)).toBeVisible();
@@ -45,7 +37,7 @@ test.describe('Products', () => {
     });
   }
 
-  test(`${productData.knownBugs.caseInsensitiveSearch.id}: search ignores upper/lower case @regression`, async () => {
+  test(`${productData.knownBugs.caseInsensitiveSearch.id}: search ignores upper/lower case @regression`, async ({ dashboardPage }) => {
     // Known bug: search is case-sensitive. The page shows "ZARA COAT 3", but typing "zara" finds nothing.
     // test.fail() marks this test as EXPECTED to fail. If the bug is ever fixed, this test will
     // "unexpectedly pass" and turn red, reminding us to remove test.fail().
@@ -57,7 +49,7 @@ test.describe('Products', () => {
     await expect(dashboardPage.productCard(data.expectedProduct)).toBeVisible({ timeout: 5_000 });
   });
 
-  test(`${productData.categoryFilter.id}: filter by category shows only that category @regression`, async () => {
+  test(`${productData.categoryFilter.id}: filter by category shows only that category @regression`, async ({ dashboardPage }) => {
     const category = productData.categoryFilter.category;
 
     // filterByCategory returns the server's answer, so we can compare page and data
@@ -72,17 +64,16 @@ test.describe('Products', () => {
     await expect(dashboardPage.productCards).toHaveCount(body.data.length);
   });
 
-  test('TC_PROD_04: product details match the product card @regression', async ({ page }) => {
+  test('TC_PROD_04: product details match the product card @regression', async ({ page, dashboardPage, productDetailsPage }) => {
     const productName = productData.productToView;
     const card = dashboardPage.productCard(productName);
     const cardPrice = await card.locator('.text-muted').textContent();
 
     await dashboardPage.viewProduct(productName);
 
-    const detailsPage = new ProductDetailsPage(page);
     await expect(page).toHaveURL(/product-details/);
-    await expect(detailsPage.productName).toHaveText(productName);
-    await expect(detailsPage.productPrice).toHaveText(cardPrice!.trim());
-    await expect(detailsPage.addToCartButton).toBeVisible();
+    await expect(productDetailsPage.productName).toHaveText(productName);
+    await expect(productDetailsPage.productPrice).toHaveText(cardPrice!.trim());
+    await expect(productDetailsPage.addToCartButton).toBeVisible();
   });
 });

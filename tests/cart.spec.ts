@@ -1,7 +1,4 @@
-import { test, expect } from '@playwright/test';
-import { LoginPage } from '../pages/LoginPage';
-import { DashboardPage } from '../pages/DashboardPage';
-import { CartPage } from '../pages/CartPage';
+import { test, expect } from '../fixtures/pages';
 import productData from '../test-data/productData.json';
 import { getRequiredEnv } from '../utils/env';
 
@@ -13,14 +10,7 @@ import { getRequiredEnv } from '../utils/env';
 test.describe.configure({ mode: 'default' });
 
 test.describe('Cart', () => {
-  let dashboardPage: DashboardPage;
-  let cartPage: CartPage;
-
-  test.beforeEach(async ({ page }) => {
-    const loginPage = new LoginPage(page);
-    dashboardPage = new DashboardPage(page);
-    cartPage = new CartPage(page);
-
+  test.beforeEach(async ({ page, loginPage, dashboardPage, cartPage }) => {
     await loginPage.goto();
     // Read inside beforeEach: if the values are missing, only the cart tests fail
     await loginPage.login(getRequiredEnv('CART_USER_EMAIL'), getRequiredEnv('CART_USER_PASSWORD'));
@@ -34,17 +24,17 @@ test.describe('Cart', () => {
   });
 
   // Clean up after each test too, so other test files (and you) find an empty cart
-  test.afterEach(async () => {
+  test.afterEach(async ({ cartPage }) => {
     await cartPage.goto();
     await cartPage.emptyCart();
   });
 
-  test('TC_CART_01: user can add a product to the cart @smoke', async () => {
+  test('TC_CART_01: user can add a product to the cart @smoke', async ({ page, dashboardPage, cartPage }) => {
     const productName = productData.cart.singleProduct;
 
     await dashboardPage.addProductToCart(productName);
 
-    await expect(dashboardPage.page.getByRole('alert')).toHaveText(productData.messages.addedToCart);
+    await expect(page.getByRole('alert')).toHaveText(productData.messages.addedToCart);
     await expect(dashboardPage.cartCount).toHaveText('1');
 
     await dashboardPage.openCart();
@@ -52,7 +42,7 @@ test.describe('Cart', () => {
     await expect(cartPage.itemNames).toHaveText([productName]);
   });
 
-  test('TC_CART_02: cart total equals the sum of item prices @regression', async () => {
+  test('TC_CART_02: cart total equals the sum of item prices @regression', async ({ dashboardPage, cartPage }) => {
     const products = productData.cart.multipleProducts;
 
     for (const [index, productName] of products.entries()) {
@@ -70,7 +60,7 @@ test.describe('Cart', () => {
     expect(await cartPage.getTotal()).toBe(expectedTotal);
   });
 
-  test('TC_CART_03: empty cart shows a message @regression', async () => {
+  test('TC_CART_03: empty cart shows a message @regression', async ({ cartPage }) => {
     await cartPage.goto();
 
     await expect(cartPage.emptyCartMessage).toBeVisible();
@@ -78,7 +68,7 @@ test.describe('Cart', () => {
     await expect(cartPage.checkoutButton).toBeHidden();
   });
 
-  test('TC_CART_04: user can remove a product from the cart @regression', async () => {
+  test('TC_CART_04: user can remove a product from the cart @regression', async ({ dashboardPage, cartPage }) => {
     const productName = productData.cart.singleProduct;
     await dashboardPage.addProductToCart(productName);
     await expect(dashboardPage.cartCount).toHaveText('1');
