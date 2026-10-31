@@ -45,7 +45,8 @@ export class DashboardPage {
   }
 
   async goto() {
-    await this.page.goto('/client/#/dashboard/dash');
+    // 'domcontentloaded': do not wait for product images (see LoginPage.goto)
+    await this.page.goto('/client/#/dashboard/dash', { waitUntil: 'domcontentloaded' });
   }
 
   async signOut() {
