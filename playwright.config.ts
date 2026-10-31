@@ -25,7 +25,10 @@ export default defineConfig({
   retries: process.env.CI ? 2 : 1,
 
   // HTML report to view results; 'list' prints progress in the terminal.
-  reporter: [['list'], ['html', { open: 'never' }]],
+  // On CI, 'github' also marks failures directly on the pull request's changed lines.
+  reporter: process.env.CI
+    ? [['github'], ['list'], ['html', { open: 'never' }]]
+    : [['list'], ['html', { open: 'never' }]],
 
   use: {
     // page.goto('/client/...') is resolved against this URL.

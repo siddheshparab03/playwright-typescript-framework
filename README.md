@@ -52,6 +52,20 @@ playwright/.auth/      Saved logins created by the setup (git-ignored: contains 
    Login tests start logged out, because they test the login screen itself.
 3. A failed test is retried once (twice on CI); a test that passes on retry is reported as flaky.
 
+## Continuous integration (GitHub Actions)
+
+`.github/workflows/playwright.yml` runs the type check and all tests on GitHub for every pull
+request and every push to `main`. It can also be started by hand from the **Actions** tab.
+
+- **Accounts:** read from repository secrets (Settings > Secrets and variables > Actions):
+  `USER_EMAIL`, `USER_PASSWORD`, `CART_USER_EMAIL`, `CART_USER_PASSWORD`, `ORDER_USER_EMAIL`,
+  `ORDER_USER_PASSWORD`.
+- **Retries:** 2 on CI (1 locally).
+- **Report:** download `playwright-report` from the run's **Artifacts**, unzip it, and run
+  `npx playwright show-report <folder>`.
+- **One run at a time:** CI runs use the same accounts, so a new run waits for the previous one.
+  Avoid running the tests locally while a CI run is in progress, for the same reason.
+
 ## Test accounts
 
 The site empties an account's cart whenever that account logs in. Tests that use the cart
