@@ -1,11 +1,13 @@
 import { test, expect } from '../fixtures/pages';
 import productData from '../test-data/productData.json';
+import { testUsers } from '../utils/testUsers';
+
+// Start every test already logged in as the main user (saved by tests/auth.setup.ts)
+test.use({ storageState: testUsers.main.storageStateFile });
 
 test.describe('Products', () => {
-  test.beforeEach(async ({ page, loginPage, dashboardPage }) => {
-    await loginPage.goto();
-    await loginPage.login(process.env.USER_EMAIL!, process.env.USER_PASSWORD!);
-    await expect(page).toHaveURL(/dashboard\/dash/);
+  test.beforeEach(async ({ dashboardPage }) => {
+    await dashboardPage.goto();
     await expect(dashboardPage.productCards.first()).toBeVisible();
   });
 

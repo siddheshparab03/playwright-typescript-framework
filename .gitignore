@@ -3,6 +3,8 @@ node_modules/
 
 # Secrets - never commit real credentials
 .env
+# Saved logged-in browser state (contains login tokens)
+playwright/.auth/
 
 # Playwright output
 test-results/
